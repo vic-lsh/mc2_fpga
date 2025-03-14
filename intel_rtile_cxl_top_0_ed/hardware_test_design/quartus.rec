@@ -1,0 +1,12 @@
+# **************************************************
+# Quartus Prime Version 24.1.0
+# Process ID 51111
+# Start logging TCL commands
+# Thu Mar 13 23:20:55 2025
+# **************************************************
+project_open "/mnt/sda1/projs/mc2_rtl/intel_rtile_cxl_top_0_ed/hardware_test_design/cxltyp3_memexp_ddr4_top.qpf" -revision cxltyp3_memexp_ddr4_top
+project_close
+# **************************************************
+# Thu Mar 13 23:21:08 2025
+# End of logging TCL commands
+# **************************************************

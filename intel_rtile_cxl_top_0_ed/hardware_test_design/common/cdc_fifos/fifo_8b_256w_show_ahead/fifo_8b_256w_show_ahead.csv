@@ -1,0 +1,18 @@
+# system info fifo_8b_256w_show_ahead on 2025.03.13.23:18:16
+system_info:
+name,value
+DEVICE,AGIB027R29A1E2VR3
+DEVICE_FAMILY,Agilex 7
+GENERATION_ID,0
+#
+#
+# Files generated for fifo_8b_256w_show_ahead on 2025.03.13.23:18:16
+files:
+filepath,kind,attributes,module,is_top
+sim/fifo_8b_256w_show_ahead.v,VERILOG,CONTAINS_INLINE_CONFIGURATION,fifo_8b_256w_show_ahead,true
+fifo_1927/sim/fifo_8b_256w_show_ahead_fifo_1927_mrd5iwy.v,VERILOG,,fifo_8b_256w_show_ahead_fifo_1927_mrd5iwy,false
+#
+# Map from instance-path to kind of module
+instances:
+instancePath,module
+fifo_8b_256w_show_ahead.fifo_0,fifo_8b_256w_show_ahead_fifo_1927_mrd5iwy
