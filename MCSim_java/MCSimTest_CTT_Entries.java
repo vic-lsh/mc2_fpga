@@ -8,18 +8,20 @@ import org.junit.Test;
 // one source multiple destination
 // one destination multiple sources
 
-// does timing need to be accounted for? Will there be time stamps on the requests
-// and can you receive a request that was sent before the request that was just processed
 public class MCSimTest_CTT_Entries {
   MCSim mcsim;
 
   @Before
   public void setUp(){
     // abcdefghijklmnopqrstuvwxyz
-    char[] data = new char[26];
+    char[] data = new char[30];
 
-    for(int i = 0; i < 26; i++){
-      data[i] = (char) ('a' + i);
+    for(int i = 0; i < 30; i++){
+      if(i < 26){
+        data[i] = (char) ('a' + i);
+      }else{
+        data[i] = 'a';
+      }
     }
 
     mcsim = new MCSim(data);
@@ -40,7 +42,9 @@ public class MCSimTest_CTT_Entries {
   //    - mixed sources and destinations
 
   // ways to optimize searching through CTT
-  
+
+  // cap number of d
+
 
   @Test
   public void dst_dst1(){
@@ -114,31 +118,85 @@ public class MCSimTest_CTT_Entries {
     assertEquals(6, mcsim.CTT.get(20).len);
   }
 
+
   @Test
-  public void src_dst1(){
-    // old entry src:    |-----|
-    // new entry dst: |-----|
-    mcsim.add_entry(20, 0, 5);
-    assertEquals(3, mcsim.CTT.size());
-    assertEquals(0, mcsim.CTT.get(20).addr);
-    assertEquals(5, mcsim.CTT.get(20).len);
-    assertEquals(12, mcsim.CTT.get(22).addr);
-    assertEquals(3, mcsim.CTT.get(22).len);
-    assertEquals(15, mcsim.CTT.get(5).addr);
-    assertEquals(2, mcsim.CTT.get(5).len);
+  public void dst_src1(){
+    // old entry dst: |-----|
+    // new entry src:          |----|
+    mcsim.add_entry(18, 22, 4);
+    assertEquals(2, mcsim.CTT.size());
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(22, mcsim.CTT.get(18).addr);
+    assertEquals(4, mcsim.CTT.get(18).len);
   }
 
-  public void src_dst1(){
-    // old entry src:    |-----|
-    // new entry dst: |-----|
-    mcsim.add_entry(20, 0, 5);
+  @Test
+  public void dst_src2(){
+    // old entry dst:      |-----|
+    // new entry src: |--|
+    mcsim.add_entry(10, 20, 2);
+    assertEquals(2, mcsim.CTT.size());
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(20, mcsim.CTT.get(10).addr);
+    assertEquals(2, mcsim.CTT.get(10).len);
+  }
+
+  @Test
+  public void dst_src3(){
+    // old entry dst:    |-----|
+    // new entry src: |-----|
+    mcsim.add_entry(10, 20, 5);
     assertEquals(3, mcsim.CTT.size());
-    assertEquals(0, mcsim.CTT.get(20).addr);
-    assertEquals(5, mcsim.CTT.get(20).len);
-    assertEquals(12, mcsim.CTT.get(22).addr);
-    assertEquals(3, mcsim.CTT.get(22).len);
-    assertEquals(15, mcsim.CTT.get(5).addr);
-    assertEquals(2, mcsim.CTT.get(5).len);
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(20, mcsim.CTT.get(10).addr);
+    assertEquals(2, mcsim.CTT.get(10).len);
+    assertEquals(22, mcsim.CTT.get(2).addr);
+    assertEquals(3, mcsim.CTT.get(2).len);
+  }
+  @Test
+  public void dst_src4(){
+    // old entry dst:  |-----|
+    // new entry src: |---------|
+    mcsim.add_entry(20, 10, 9);
+    assertEquals(4, mcsim.CTT.size());
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(20, mcsim.CTT.get(10).addr);
+    assertEquals(2, mcsim.CTT.get(10).len);
+    assertEquals(22, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(27, mcsim.CTT.get(17).addr);
+    assertEquals(2, mcsim.CTT.get(17).len);
+  }
+
+  @Test
+  public void dst_src5(){
+    // old entry dst: |-----|
+    // new entry src:  |---|
+    mcsim.add_entry(13, 20, 3);
+    assertEquals(2, mcsim.CTT.size());
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(20, mcsim.CTT.get(3).addr);
+    assertEquals(3, mcsim.CTT.get(3).len);
+  }
+
+  @Test
+  public void dst_src6(){
+    // old entry dst: |-----|
+    // new entry src:    |------|
+
+    mcsim.add_entry(14, 20, 6);
+    assertEquals(3, mcsim.CTT.size());
+    assertEquals(12, mcsim.CTT.get(2).addr);
+    assertEquals(5, mcsim.CTT.get(2).len);
+    assertEquals(20, mcsim.CTT.get(4).addr);
+    assertEquals(3, mcsim.CTT.get(4).len);
+    assertEquals(23, mcsim.CTT.get(17).addr);
+    assertEquals(3, mcsim.CTT.get(17).len);
   }
 
 }
