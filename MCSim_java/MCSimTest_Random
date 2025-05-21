@@ -1,0 +1,36 @@
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MCSimTest_Random {
+
+    @Test
+    public void RandomTest() {
+        final int mem_size = 1024;
+        final int len = 200;
+
+        char[] memory = new char[mem_size];
+        for (int i = 0; i < mem_size; i++) {
+            memory[i] = (char)(i);
+        }
+
+        char[] baseline = new char[mem_size];
+        System.arraycopy(memory, 0, baseline, 0, mem_size);
+
+        MCSim mcsim = new MCSim(memory);
+        char[] memory_read, baseline_read;
+        baseline_read = new char[len];
+ 
+       for(int i = 1; i <= 100; i++){
+          int src = Math.random()*(mem_size-1);
+          int dst = Math.random()*(mem_size-1);
+          mscim.add_entry(src, dst, len);
+          System.arraycopy(baseline, src, baseline, dst, len);
+
+          memory_read = mcsim.handle_mem_req(new Req(true, dst, len, null));
+          System.array(baseline, dst, baseline_read, 0, len);
+
+          assertArrayEquals(baseline_read, memory_read, "error at iteration: " + i);
+       }
+        
+    }
+}
