@@ -1,36 +1,150 @@
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+package tests; 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import main.*;
+import main.classes.*;
 
 public class MCSimTest_Random {
+
+    ArrayList<Integer> src_addrs = new ArrayList<>();
+    ArrayList<Integer> dst_addrs = new ArrayList<>();
 
     @Test
     public void RandomTest() {
         final int mem_size = 1024;
-        final int len = 200;
+        final int len = 192;
+
+        Random random = new Random();
 
         char[] memory = new char[mem_size];
         for (int i = 0; i < mem_size; i++) {
-            memory[i] = (char)(i);
+            memory[i] = (char)(random.nextInt(122 - 97 + 1) + 97);
         }
 
         char[] baseline = new char[mem_size];
         System.arraycopy(memory, 0, baseline, 0, mem_size);
 
         MCSim mcsim = new MCSim(memory);
-        char[] memory_read, baseline_read;
-        baseline_read = new char[len];
- 
+        char[] memory_read = new char[mem_size];
+        char[] memory_read_total = new char[mem_size];
+        
+        src_addrs.clear();
+        dst_addrs.clear();
+
        for(int i = 1; i <= 100; i++){
-          int src = Math.random()*(mem_size-1);
-          int dst = Math.random()*(mem_size-1);
-          mscim.add_entry(src, dst, len);
+        // make sure randomly generated values are cache lined aligned 
+          int src = random.nextInt(mem_size - len + 1);
+          int dst;
+          while(true){
+            dst = ((random.nextInt(mem_size - len + 1) / 64) * 64);
+            if(dst <= src){
+              if(dst + len <= src){
+                break;
+              }
+            }else if(dst > src && dst >= src + len){
+              break;
+            }
+            
+          }
+
+          src_addrs.add(src);
+          dst_addrs.add(dst);
+
+          mcsim.add_entry(src, dst, len);
           System.arraycopy(baseline, src, baseline, dst, len);
 
-          memory_read = mcsim.handle_mem_req(new Req(true, dst, len, null));
-          System.array(baseline, dst, baseline_read, 0, len);
+          System.out.println("src: " + src + " - " + (src + len) + ", dst: " + dst+ " - " + (dst + len) );
+          System.out.println("CTT:");
+          mcsim.CTT.printEntries();
 
-          assertArrayEquals(baseline_read, memory_read, "error at iteration: " + i);
+          for(int j = 0; j < mem_size/64; j++){
+            memory_read = mcsim.handle_mem_req(new Req(true, j*64, 64, null));
+            System.arraycopy(memory_read, 0, memory_read_total, j*64, 64);
+          }
+          
+        
+          System.out.println("baseline memory: ");
+          //System.out.println(Arrays.toString(baseline));
+          printArray(baseline);
+          System.out.println("mc2 memory: ");
+          //System.out.println(Arrays.toString(memory_read_total));
+          printArray(memory_read_total);
+          System.out.println("--------------------------------------------------------");
+          System.out.println();
+          assertArrayEquals(baseline, memory_read_total);
        }
         
+    }
+
+    @Test
+    @Ignore
+    public void replyPrevious() {
+        final int mem_size = 1024;
+        final int len = 192;
+
+        Random random = new Random();
+
+        char[] memory = new char[mem_size];
+        for (int i = 0; i < mem_size; i++) {
+            memory[i] = (char)(random.nextInt(122 - 97 + 1) + 97);
+        }
+
+        char[] baseline = new char[mem_size];
+        System.arraycopy(memory, 0, baseline, 0, mem_size);
+
+        MCSim mcsim = new MCSim(memory);
+        char[] memory_read = new char[mem_size];
+        char[] memory_read_total = new char[mem_size];
+ 
+       for(int i = 0; i < src_addrs.size(); i++){
+          int src = src_addrs.get(i);
+          int dst = dst_addrs.get(i);
+
+          mcsim.add_entry(src, dst, len);
+          System.arraycopy(baseline, src, baseline, dst, len);
+
+          System.out.println("src: " + src + " - " + (src + len) + ", dst: " + dst+ " - " + (dst + len) );
+          System.out.println("CTT:");
+          mcsim.CTT.printEntries();
+
+          for(int j = 0; j < mem_size/64; j++){
+            memory_read = mcsim.handle_mem_req(new Req(true, j*64, 64, null));
+            System.arraycopy(memory_read, 0, memory_read_total, j*64, 64);
+          }
+          
+        
+          System.out.println("baseline memory: ");
+          //System.out.println(Arrays.toString(baseline));
+          printArray(baseline);
+          System.out.println("mc2 memory: ");
+          //System.out.println(Arrays.toString(memory_read_total));
+          printArray(memory_read_total);
+          System.out.println("--------------------------------------------------------");
+          System.out.println();
+          assertArrayEquals(baseline, memory_read_total);
+       }
+        
+    }
+
+    public void printArray(char[] arr){
+      String result = "[";
+      for(int i = 0; i < arr.length; i++){
+        result += "" + i + ": " + arr[i];
+        if(i != arr.length - 1){
+          result += ", ";
+        }
+      }
+      result += "]";
+      System.out.println(result);
     }
 }
