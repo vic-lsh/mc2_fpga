@@ -6,7 +6,7 @@ import java.util.Queue;
 import main.classes.*;
 
 public class CTTArray {
-  public static final int SIZE = 20;
+  public static final int SIZE = 1000;
 
   public CTTEntry array[];
   public Queue<Integer> empty_slots;

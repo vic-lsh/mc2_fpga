@@ -29,17 +29,19 @@ public class MCSim {
   public void add_entry(int src, int dst_addr, int len){
     //CTT.addEntry(new CTTEntry(src, dst_addr, len));
  
-    Integer[] indexes_src = CTT.in_dst(new Req(false, src, len, null));
+    //Integer[] indexes_src = CTT.in_dst(new Req(false, src, len, null));
     // new dst overlaps with old src --> ok to add if executing CTT entries in order
     Integer[] indexes_dst = CTT.in_dst(new Req(false, dst_addr, len, null));
 
-    if(indexes_src.length == 0 && indexes_dst.length == 0){
-      CTT.addEntry(new CTTEntry(src, dst_addr, len));
-      return;
-    }
+    //if(indexes_src.length == 0 && indexes_dst.length == 0){
+      //CTT.addEntry(new CTTEntry(src, dst_addr, len));
+      //return;
+    //}
 
     Arrays.sort(indexes_dst, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
-    Arrays.sort(indexes_src, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
+    //Arrays.sort(indexes_src, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
+
+    
 
     int start = dst_addr;
     int end = 0;
@@ -50,31 +52,46 @@ public class MCSim {
         end = CTT.getEntry(indexes_dst[i + 1]).dst.addr - 1;
       }
 
-      dst_dst(src + start - dst_addr, start, end - start + 1, i);
+      dst_dst(src + start - dst_addr, start, end - start + 1, indexes_dst[i]);
       start = end + 1;
     }
 
-    start = dst_addr;
+    Integer[] indexes_src = CTT.in_dst(new Req(false, src, len, null));
+    
+    System.out.println("indexes_dst: " + Arrays.toString(indexes_dst));
+    System.out.println("indexes_src: " + Arrays.toString(indexes_src));
+
+    if(indexes_src.length == 0){
+      CTT.addEntry(new CTTEntry(src, dst_addr, len));
+      return;
+    }
+
+    Arrays.sort(indexes_src, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
+
+    start = src;
     end = 0;
     for(int i = 0; i < indexes_src.length; i++){
       if(i == indexes_src.length - 1){
-        end = dst_addr + len - 1;
+        end = src + len - 1;
       }else{
         end = CTT.getEntry(indexes_src[i + 1]).dst.addr - 1;
       }
 
-      dst_src(src + start - dst_addr, start, end - start + 1, i);
+      dst_src(start, dst_addr + start - src, end - start + 1, indexes_src[i]);
       start = end + 1;
     }
   }
 
   public void dst_dst(int src, int dst_addr, int len, int index_dst){
+    //System.out.println("in dst_dst");
     int start = CTT.getEntry(index_dst).dst.addr;
     int end = CTT.getEntry(index_dst).dst.addr + CTT.getEntry(index_dst).dst.len - 1;
     int src_addr = CTT.getEntry(index_dst).src;
 
     if (dst_addr <= start) {
+      //System.out.println("entry less than overlap");
       if (dst_addr + len - 1 >= end) {
+        //System.out.println("removing entire entry");
         CTT.removeEntry(index_dst);
       } else {
         CTT.removeEntry(index_dst);
@@ -82,7 +99,9 @@ public class MCSim {
                 end - (dst_addr + len) + 1));
       }
     } else {
+      //System.out.println("entry greater than overlap");
       if (dst_addr + len - 1 >= end) {
+        //System.out.println("end of new entry greater than end of old entry");
         CTT.removeEntry(index_dst);
         CTT.addEntry(new CTTEntry(src_addr, start, dst_addr - start));
       } else {
@@ -92,7 +111,7 @@ public class MCSim {
             dst_addr + len, end - (dst_addr + len) + 1));
       }
     }
-    CTT.addEntry(new CTTEntry(src, dst_addr, len));
+    //CTT.addEntry(new CTTEntry(src, dst_addr, len));
   }
 
   public void dst_src(int src, int dst_addr, int len, int index_src){
@@ -147,7 +166,27 @@ public class MCSim {
     if(indexes.length == 1){
       return handle_write_helper(req, indexes[0]);
     }
-   
+
+    Arrays.sort(indexes, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
+
+    int start = req.addr;
+    int end = 0;
+    char[] result = new char[req.size];
+    for(int i = 0; i < indexes.length; i++){
+      if(i == indexes.length - 1){
+        end = req.addr + req.size - 1;
+      }else{
+        end = CTT.getEntry(indexes[i + 1]).dst.addr - 1;
+      }
+
+      char[] partial_data = new char[end - start + 1];
+      System.arraycopy(req.data, start - req.addr, partial_data, 0, partial_data.length);
+      Req req1 = new Req(false, start, end - start + 1, partial_data); 
+      handle_write_helper(req1, indexes[i]);
+      start = end + 1;
+    }
+
+   /* 
    int smaller_index, larger_index;
    if(CTT.getEntry(indexes[0]).dst.addr < CTT.getEntry(indexes[0]).dst.addr){
       smaller_index = indexes[0];
@@ -168,7 +207,7 @@ public class MCSim {
    System.arraycopy(req.data, larger_entry.dst.addr - req.addr, partial_data, 0, partial_data.length);
    req1 = new Req(false, larger_entry.dst.addr, req.addr + req.size - larger_entry.dst.addr, partial_data);
    handle_write_helper(req1, larger_index);
-   
+   */
    return null;
   }
    
@@ -200,6 +239,7 @@ public class MCSim {
   }
 
   public char[] handle_read(Req req){
+    //System.out.println("handle read: " + req.addr + "-" + (req.addr + req.size - 1));
     Integer[] indexes = CTT.in_dst(req);
 
     if(indexes.length == 0){
@@ -210,15 +250,26 @@ public class MCSim {
     return handle_read_helper(req, indexes[0]);
    }
    
-   int smaller_index, larger_index;
-   if(CTT.getEntry(indexes[0]).dst.addr < CTT.getEntry(indexes[0]).dst.addr){
-      smaller_index = indexes[0];
-      larger_index = indexes[1];
-   }else{
-      smaller_index = indexes[1];
-      larger_index = indexes[0];
-   }
+    
+   Arrays.sort(indexes, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
 
+    int start = req.addr;
+    int end = 0;
+    char[] result = new char[req.size];
+    for(int i = 0; i < indexes.length; i++){
+      if(i == indexes.length - 1){
+        end = req.addr + req.size - 1;
+      }else{
+        end = CTT.getEntry(indexes[i + 1]).dst.addr - 1;
+      }
+
+      //System.out.println("start: " + start + ", end: " + end);
+      Req req1 = new Req(true, start, end - start + 1, null); 
+      char[] partial_result = handle_read_helper(req1, indexes[i]);
+      System.arraycopy(partial_result, 0, result, start - req.addr, partial_result.length);
+      start = end + 1;
+    }
+/* 
    char[] result = new char[req.size];
    char[] partial_result;
 
@@ -231,7 +282,10 @@ public class MCSim {
    req1 = new Req(true, larger_entry.dst.addr, req.addr + req.size - larger_entry.dst.addr, null);
    partial_result = handle_read_helper(req1, larger_index);
    System.arraycopy(partial_result, 0, result, larger_entry.dst.addr - req.addr, partial_result.length);
-   
+   */
+
+  //System.out.println(req.addr + "-" + (req.addr + req.size - 1) + ": overlaps with multiple entries");
+
    return result;
   }
     
