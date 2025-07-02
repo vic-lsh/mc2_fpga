@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -51,8 +52,12 @@ public class MCSimTest_Random {
           //}
           BufferedWriter myWriter = new BufferedWriter(new FileWriter("ctt_entries.txt"));
           //myWriter.write("");
+          long curr_time;
 
-          for (int i = 1; i <= 100; i++) {
+          long start_time = System.nanoTime();
+          int prev_i = 1;
+
+          for (int i = 1; i <= 1000000; i++) {
             // make sure randomly generated values are cache lined aligned
             int src = random.nextInt(mem_size - len + 1);
             int dst;
@@ -75,24 +80,29 @@ public class MCSimTest_Random {
             mcsim.add_entry(src, dst, len);
             System.arraycopy(baseline, src, baseline, dst, len);
 
-            System.out.println("src: " + src + " - " + (src + len - 1) + ", dst: " + dst + " - " + (dst + len - 1));
-            System.out.println("CTT:");
-            mcsim.CTT.printEntries();
+            //System.out.println("src: " + src + " - " + (src + len - 1) + ", dst: " + dst + " - " + (dst + len - 1));
+            //System.out.println("CTT:");
+            //mcsim.CTT.printEntries();
 
             for (int j = 0; j < mem_size / 64; j++) {
               memory_read = mcsim.handle_mem_req(new Req(true, j * 64, 64, null));
               System.arraycopy(memory_read, 0, memory_read_total, j * 64, 64);
             }
 
-            System.out.println("baseline memory: ");
-            // System.out.println(Arrays.toString(baseline));
-            printArray(baseline);
-            System.out.println("mc2 memory: ");
-            // System.out.println(Arrays.toString(memory_read_total));
-            printArray(memory_read_total);
-            System.out.println("--------------------------------------------------------");
-            System.out.println();
+            //System.out.println("baseline memory: ");
+            //printArray(baseline);
+            //System.out.println("mc2 memory: ");
+            //printArray(memory_read_total);
+            //System.out.println("--------------------------------------------------------");
+            //System.out.println();
             assertArrayEquals(baseline, memory_read_total);
+
+            curr_time = System.nanoTime();
+
+            if(TimeUnit.NANOSECONDS.toMillis(curr_time - start_time) % 1000 == 0){
+              System.out.println("time: " + (TimeUnit.NANOSECONDS.toMillis(curr_time - start_time)/1000) + ", iterations = " + (i - prev_i));
+              prev_i = i;
+            }
           }
 
           //myWriter.close();

@@ -16,32 +16,27 @@ public class MCSim {
     this.data = data;
   }
  
-  public void mc_lazy(int src, int dst, int len) {
-    /* 
-    for(int i = 0; i < len; i++){
-      data[dst + i] = data[src + i];
+  //public void mc_lazy(int src, int dst, int len) {
+  public void mc_lazy() {
+    int index = CTT.nextSlot();
+    CTTEntry entry = CTT.getEntry(index);
+
+    for(int i = 0; i < entry.dst.len; i++){
+      data[entry.dst.addr + i] = data[entry.src + i];
     }
 
-    CTT.removeEntry(src, dst, len);
-    */
+    CTT.removeEntry(index);
   }
 
-  public void add_entry(int src, int dst_addr, int len){
-    //CTT.addEntry(new CTTEntry(src, dst_addr, len));
- 
-    //Integer[] indexes_src = CTT.in_dst(new Req(false, src, len, null));
+  public boolean add_entry(int src, int dst_addr, int len){
     // new dst overlaps with old src --> ok to add if executing CTT entries in order
+    if(CTT.in_src(new Req(false, dst_addr, len, null))){
+      return false;
+    }
+
     Integer[] indexes_dst = CTT.in_dst(new Req(false, dst_addr, len, null));
 
-    //if(indexes_src.length == 0 && indexes_dst.length == 0){
-      //CTT.addEntry(new CTTEntry(src, dst_addr, len));
-      //return;
-    //}
-
     Arrays.sort(indexes_dst, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
-    //Arrays.sort(indexes_src, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
-
-    
 
     int start = dst_addr;
     int end = 0;
@@ -58,12 +53,12 @@ public class MCSim {
 
     Integer[] indexes_src = CTT.in_dst(new Req(false, src, len, null));
     
-    System.out.println("indexes_dst: " + Arrays.toString(indexes_dst));
-    System.out.println("indexes_src: " + Arrays.toString(indexes_src));
+    //System.out.println("indexes_dst: " + Arrays.toString(indexes_dst));
+    //System.out.println("indexes_src: " + Arrays.toString(indexes_src));
 
     if(indexes_src.length == 0){
       CTT.addEntry(new CTTEntry(src, dst_addr, len));
-      return;
+      return true;
     }
 
     Arrays.sort(indexes_src, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
@@ -80,9 +75,11 @@ public class MCSim {
       dst_src(start, dst_addr + start - src, end - start + 1, indexes_src[i]);
       start = end + 1;
     }
+
+    return true;
   }
 
-  public void dst_dst(int src, int dst_addr, int len, int index_dst){
+  private void dst_dst(int src, int dst_addr, int len, int index_dst){
     //System.out.println("in dst_dst");
     int start = CTT.getEntry(index_dst).dst.addr;
     int end = CTT.getEntry(index_dst).dst.addr + CTT.getEntry(index_dst).dst.len - 1;
@@ -114,7 +111,7 @@ public class MCSim {
     //CTT.addEntry(new CTTEntry(src, dst_addr, len));
   }
 
-  public void dst_src(int src, int dst_addr, int len, int index_src){
+  private void dst_src(int src, int dst_addr, int len, int index_src){
     int start = CTT.getEntry(index_src).dst.addr;
     int end = CTT.getEntry(index_src).dst.addr + CTT.getEntry(index_src).dst.len - 1;
     int src_addr = CTT.getEntry(index_src).src;
@@ -143,28 +140,33 @@ public class MCSim {
     if (req.is_read) {
       return handle_read(req);
     } else {
-      return handle_write(req);
+      if(!handle_write(req)){
+        return null;
+      }else{
+        char[] result = new char[1];
+        result[0] = 'a';
+        return result;
+      }
     }
   }
 
-  public char[] handle_write(Req req){
+  public boolean handle_write(Req req){
     boolean src_overlap = CTT.in_src(req);
 
     while(src_overlap){
-      // wait for copy
-      //this.wait();
-      src_overlap = CTT.in_src(req);
+      return false;
     }
 
     Integer[] indexes = CTT.in_dst(req);
 
     if(indexes.length == 0){
       writeData(req.addr, req.size, req.data);
-      return null;
+      return true;
     }
 
     if(indexes.length == 1){
-      return handle_write_helper(req, indexes[0]);
+      handle_write_helper(req, indexes[0]);
+      return true;
     }
 
     Arrays.sort(indexes, (i, j) -> Integer.compare(CTT.getEntry(i).dst.addr, CTT.getEntry(j).dst.addr));
@@ -208,7 +210,7 @@ public class MCSim {
    req1 = new Req(false, larger_entry.dst.addr, req.addr + req.size - larger_entry.dst.addr, partial_data);
    handle_write_helper(req1, larger_index);
    */
-   return null;
+   return true;
   }
    
   public char[] handle_write_helper(Req req, int index) {

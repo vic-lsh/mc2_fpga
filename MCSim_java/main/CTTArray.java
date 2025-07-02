@@ -1,23 +1,27 @@
 package main;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import main.classes.*;
 
 public class CTTArray {
-  public static final int SIZE = 1000;
+  public static final int SIZE = 10000000;
 
   public CTTEntry array[];
   public Queue<Integer> empty_slots;
   public int index;
   public int size;
+  public HashSet<Integer> filled_slots;
 
   public CTTArray(){
     array = new CTTEntry[SIZE];
     empty_slots = new LinkedList<>();
     index = 0;
     size = 0;
+    filled_slots = new HashSet<>();
   }
 
   public CTTEntry getEntry(int index){
@@ -32,8 +36,10 @@ public class CTTArray {
     if(!empty_slots.isEmpty()){
       int slot = empty_slots.remove();
       array[slot] = entry;
+      filled_slots.add(slot);
     }else{
       array[index] = entry;
+      filled_slots.add(index);
       index++;
     }
     size++;
@@ -42,6 +48,7 @@ public class CTTArray {
   public void removeEntry(int index){
     array[index] = null;
     empty_slots.add(index);
+    filled_slots.remove(index);
     size--;
   }
 
@@ -87,25 +94,9 @@ public class CTTArray {
       if(req.addr <= dst.addr){
         if(req.addr + req.size > dst.addr){
           result.add(i);
-          /* 
-          if(result[0] == -1){
-            result[0] = i;
-          }else{
-            result[1] = i;
-          }
-            */
-          //return i;
          }
       }else if(req.addr > dst.addr && req.addr < dst.addr + dst.len){
         result.add(i);
-        /* 
-        if(result[0] == -1){
-          result[0] = i;
-        }else{
-          result[1] = i;
-        }
-          */
-        //return i;
        }
     }
     
@@ -132,5 +123,14 @@ public class CTTArray {
     }
     result += "]";
     System.out.println(result);
+  }
+
+  public int nextSlot(){
+    if(filled_slots.isEmpty()){
+      return -1;
+    }
+
+    Iterator<Integer> iter = filled_slots.iterator();
+    return iter.next();
   }
 }
